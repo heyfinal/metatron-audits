@@ -80,7 +80,10 @@
     <span>AUDITOR&nbsp; <b>METATRON (self)</b></span>
     <span>SCOPE&nbsp; <b>~/.claude install</b></span>
   </div>
-  <div class="grade"><span class="big g">B&nbsp;/&nbsp;Healthy</span><small>Core fleet operational · 2 high-severity items degrade cost-routing &amp; update path</small></div>
+  <div class="grade"><span class="big g">A&minus;&nbsp;/&nbsp;Healthy</span><small>Both high-severity items remediated same day · medium/low items open</small></div>
+  <div style="margin-top:16px;padding:12px 16px;border:1px solid rgba(63,207,142,.4);background:rgba(63,207,142,.08);border-radius:12px;font-size:13.5px;color:var(--ink)">
+    <b style="color:var(--ok)">✔ Remediation applied 2026-11-22</b> — <b>#1</b> runtime confirmed current (mise-managed <b>2.1.330</b>, ahead of target); removed the orphaned root-owned npm-global <code>2.1.245</code> that was generating the recurring failed-update signal. <b>#2</b> OpenRouter + DeepSeek MCP restored — root cause was keys exported only in interactive shells (never inherited by non-interactive MCP spawns) plus a corrupted openrouter npx dep tree; keys wired into per-server <code>env</code>, npx cache cleared, both verified via live handshake. <span style="color:var(--mut)">Takes effect for new sessions on reconnect.</span>
+  </div>
 </div></header>
 
 <div class="wrap">
@@ -129,7 +132,7 @@
   <div class="cards">
 
     <div class="find high">
-      <h3><span class="sev high">High</span> Claude Code self-update is failing — runtime is stale</h3>
+      <h3><span class="sev high">High</span> <span class="sev good">Resolved</span> Claude Code self-update is failing — runtime is stale</h3>
       <p>The last auto-update attempt failed and the install is pinned behind the current release. A stale runtime misses harness fixes, security patches, and new tool contracts.</p>
       <div class="ev">last-update-result.json → outcome: "failed", status: "no_permissions"
 version_from 2.1.245 → version_to 2.1.325   (attempt 2026-11-13, not retried since)</div>
@@ -137,7 +140,7 @@ version_from 2.1.245 → version_to 2.1.325   (attempt 2026-11-13, not retried s
     </div>
 
     <div class="find high">
-      <h3><span class="sev high">High</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
+      <h3><span class="sev high">High</span> <span class="sev good">Resolved</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
       <p>Model-Routing doctrine sends mechanical/bulk → OpenRouter CHEAP and bounded reasoning → MID. Both MCP transports are CONNECTION_CLOSED on echo, so every overflow/cheap task silently falls back to the premium Anthropic tier — the exact spend leak the doctrine exists to prevent.</p>
       <div class="ev">mcp__openrouter → CONNECTION_CLOSED      mcp__deepseek → CONNECTION_CLOSED
 or_route.py present (CLI helper OK) — but the chat_completion transport it feeds is dead</div>
