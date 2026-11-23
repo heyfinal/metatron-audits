@@ -80,9 +80,9 @@
     <span>AUDITOR&nbsp; <b>METATRON (self)</b></span>
     <span>SCOPE&nbsp; <b>~/.claude install</b></span>
   </div>
-  <div class="grade"><span class="big g">A&minus;&nbsp;/&nbsp;Healthy</span><small>Both high-severity items remediated same day · medium/low items open</small></div>
-  <div style="margin-top:16px;padding:12px 16px;border:1px solid rgba(63,207,142,.4);background:rgba(63,207,142,.08);border-radius:12px;font-size:13.5px;color:var(--ink)">
-    <b style="color:var(--ok)">✔ Remediation applied 2026-11-22</b> — <b>#1</b> runtime confirmed current (mise-managed <b>2.1.330</b>, ahead of target); removed the orphaned root-owned npm-global <code>2.1.245</code> that was generating the recurring failed-update signal. <b>#2</b> OpenRouter + DeepSeek MCP restored — root cause was keys exported only in interactive shells (never inherited by non-interactive MCP spawns) plus a corrupted openrouter npx dep tree; keys wired into per-server <code>env</code>, npx cache cleared, both verified via live handshake. <span style="color:var(--mut)">Takes effect for new sessions on reconnect.</span>
+  <div class="grade"><span class="big g">B&nbsp;/&nbsp;Healthy</span><small>#1 resolved · #3 roster resolved · #2 blocked on key provisioning (Daniel)</small></div>
+  <div style="margin-top:16px;padding:12px 16px;border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);border-radius:12px;font-size:13.5px;color:var(--ink)">
+    <b style="color:var(--ok)">✔ Remediation 2026-11-22</b> — <b>#1 RESOLVED:</b> runtime confirmed current (mise-managed <b>2.1.330</b>, ahead of target); removed the orphaned root-owned npm-global <code>2.1.245</code> driving the failed-update signal. <b>#3 RESOLVED:</b> recovered all 19 missing agents' established callsigns from their own identity banners/KBs and wrote them into <code>roster.json</code> (61 lanes) — no re-badging. <b style="color:var(--warn)">#2 BLOCKED:</b> deeper investigation found the OpenRouter/DeepSeek API keys are <b>not provisioned on echo at all</b> — the <code>pass</code> store is empty, so the shell's <code>$(_pass_env …)</code> exports resolve to nothing. The npx dep corruption was fixed and the env plumbing (<code>~/.env_secrets</code> + systemd drop-in) is prepped, but cost-routing stays down until Daniel provisions the two keys. Interim wiring was reverted to a clean state. <span style="color:var(--mut)">Honest correction: the first-pass "connected" check was tools/list only, which needs no auth.</span>
   </div>
 </div></header>
 
@@ -140,18 +140,21 @@ version_from 2.1.245 → version_to 2.1.325   (attempt 2026-11-13, not retried s
     </div>
 
     <div class="find high">
-      <h3><span class="sev high">High</span> <span class="sev good">Resolved</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
+      <h3><span class="sev high">High</span> <span class="sev med">Blocked · needs key</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
       <p>Model-Routing doctrine sends mechanical/bulk → OpenRouter CHEAP and bounded reasoning → MID. Both MCP transports are CONNECTION_CLOSED on echo, so every overflow/cheap task silently falls back to the premium Anthropic tier — the exact spend leak the doctrine exists to prevent.</p>
-      <div class="ev">mcp__openrouter → CONNECTION_CLOSED      mcp__deepseek → CONNECTION_CLOSED
-or_route.py present (CLI helper OK) — but the chat_completion transport it feeds is dead</div>
-      <div class="fix"><b>Fix:</b> restart/repair both MCP servers (they ARE configured in ~/.claude.json — this is a transport failure, not missing config). Verify with <code>claude mcp list</code> showing ✔ before trusting cheap-tier routing again.</div>
+      <div class="ev">root cause: `pass` store EMPTY on echo → shell exports OPENROUTER_API_KEY/DEEPSEEK_API_KEY=$(_pass_env …) resolve to ""
+openrouter npx also had corrupted dep tree (agent-base missing) — fixed via npx cache clear
+systemd timer + MCP spawns are non-interactive → never see shell-exported keys anyway</div>
+      <div class="fix"><b>Blocked on Daniel — provision the two keys, then it's live:</b><br>
+      • <code>pass insert OPENROUTER_API_KEY</code> &amp; <code>pass insert DEEPSEEK_API_KEY</code> (shell path), <b>and</b><br>
+      • put the literal keys in <code>mcpServers.openrouter.env</code> / <code>deepseek.env</code> of <code>~/.claude.json</code> (MCP can't do shell substitution), <b>and</b> as literal lines in <code>~/.env_secrets</code> (0600) for the evolve timer.<br>
+      Infra is prepped (npx fixed, env_secrets + systemd drop-in in place); only the key values are missing.</div>
     </div>
 
     <div class="find med">
-      <h3><span class="sev med">Medium</span> Roster drift — roster.json (42) lags live agents (60)</h3>
-      <p>60 agent definitions carry frontmatter identity, but roster.json tracks only 42. Since callsigns must be resolved live from roster.json, the ~18 unregistered agents have no authoritative callsign — handoffs can name the wrong employee or none.</p>
-      <div class="ev">frontmatter-named agents: 60   ·   .md files: 68   ·   roster.json entries: 42</div>
-      <div class="fix"><b>Fix:</b> run register_agent.py over the unregistered .md set so every live agent has a pool callsign + title in roster.json/ROSTER.md.</div>
+      <h3><span class="sev med">Medium</span> <span class="sev good">Resolved</span> Roster drift — roster.json (42) lags live agents (60)</h3>
+      <p>roster.json tracked only 42 of ~60 live agents. The 19 missing lanes already had established fleet callsigns (RALPH, CATHERINE, LILY, AUSTIN, LEE, CHAD, BRADLEY, IMOGEN, ALEXANDER, CLAIRE, …) embedded in their own identity banners/KBs — so blind re-registration would have minted <i>new</i> names and broken those identities.</p>
+      <div class="ev">Fix applied: recovered each agent's existing callsign+title from its banner/KB → wrote into roster.json (now 61 lanes), ZERO re-badges, ZERO collisions; ROSTER.md regenerated. Verified: agent_identity.py who redco-pm → RALPH ✔, chief-estimator → CATHERINE ✔, macos-guru → IMOGEN ✔.</div>
     </div>
 
     <div class="find med">
@@ -193,9 +196,9 @@ OK       keyring.py · agent_identity.py · register_agent.py · or_route.py · 
 <section>
   <h2>Priority actions</h2>
   <div class="two">
-    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev high">1</span> Fix npm-global perms → update to 2.1.325+</h3><p style="margin:4px 0 0">Unblocks every future auto-update. One ownership fix.</p></div>
-    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev high">2</span> Restore OpenRouter + DeepSeek MCP</h3><p style="margin:4px 0 0">Stops silent premium-tier spend on cheap work.</p></div>
-    <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">3</span> Register the 18 orphan agents</h3><p style="margin:4px 0 0">Guarantees correct callsign resolution at dispatch.</p></div>
+    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev good">1 ✔</span> Runtime already current; orphan removed</h3><p style="margin:4px 0 0">Active 2.1.330 (mise); failed-update noise eliminated.</p></div>
+    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">2 ⧗</span> Provision OpenRouter + DeepSeek keys</h3><p style="margin:4px 0 0">Blocked on Daniel — keys absent on echo; infra prepped.</p></div>
+    <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev good">3 ✔</span> 19 agents reconciled into roster</h3><p style="margin:4px 0 0">Existing callsigns recovered; no re-badging.</p></div>
     <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">4</span> Reconcile echo-local doctrine paths</h3><p style="margin:4px 0 0">instincts.jsonl / gemini wrapper vs this node's reality.</p></div>
     <div class="find low" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev low">5</span> Prune 189 KB .bak files</h3><p style="margin:4px 0 0">Add rotation to the sync hook.</p></div>
     <div class="find low" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev low">6</span> Drop duplicate MCP placeholders</h3><p style="margin:4px 0 0">Clean the server list.</p></div>
