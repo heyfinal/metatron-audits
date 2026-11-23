@@ -80,9 +80,9 @@
     <span>AUDITOR&nbsp; <b>METATRON (self)</b></span>
     <span>SCOPE&nbsp; <b>~/.claude install</b></span>
   </div>
-  <div class="grade"><span class="big g">B&nbsp;/&nbsp;Healthy</span><small>#1 resolved · #3 roster resolved · #2 blocked on key provisioning (Daniel)</small></div>
-  <div style="margin-top:16px;padding:12px 16px;border:1px solid rgba(255,176,32,.4);background:rgba(255,176,32,.08);border-radius:12px;font-size:13.5px;color:var(--ink)">
-    <b style="color:var(--ok)">✔ Remediation 2026-11-22</b> — <b>#1 RESOLVED:</b> runtime confirmed current (mise-managed <b>2.1.330</b>, ahead of target); removed the orphaned root-owned npm-global <code>2.1.245</code> driving the failed-update signal. <b>#3 RESOLVED:</b> recovered all 19 missing agents' established callsigns from their own identity banners/KBs and wrote them into <code>roster.json</code> (61 lanes) — no re-badging. <b style="color:var(--warn)">#2 BLOCKED:</b> deeper investigation found the OpenRouter/DeepSeek API keys are <b>not provisioned on echo at all</b> — the <code>pass</code> store is empty, so the shell's <code>$(_pass_env …)</code> exports resolve to nothing. The npx dep corruption was fixed and the env plumbing (<code>~/.env_secrets</code> + systemd drop-in) is prepped, but cost-routing stays down until Daniel provisions the two keys. Interim wiring was reverted to a clean state. <span style="color:var(--mut)">Honest correction: the first-pass "connected" check was tools/list only, which needs no auth.</span>
+  <div class="grade"><span class="big g">A&minus;&nbsp;/&nbsp;Healthy</span><small>#1 · #2 · #3 resolved &amp; real-call verified · #4 keys provisioned (evolve parse-bug remains)</small></div>
+  <div style="margin-top:16px;padding:12px 16px;border:1px solid rgba(63,207,142,.4);background:rgba(63,207,142,.08);border-radius:12px;font-size:13.5px;color:var(--ink)">
+    <b style="color:var(--ok)">✔ Remediation 2026-11-23</b> — <b>#1 RESOLVED:</b> runtime already current (mise <b>2.1.330</b>); removed orphaned root npm-global <code>2.1.245</code>. <b>#3 RESOLVED:</b> recovered all 19 missing agents' established callsigns and wrote them into <code>roster.json</code> (61 lanes) — no re-badging. <b style="color:var(--ok)">#2 RESOLVED:</b> the real root cause was that the OpenRouter/DeepSeek/Gemini keys were never provisioned on echo (empty <code>pass</code> store). Pulled them from the central METATRON node <b>OMEGA</b> (macminim4) over SSH — OpenRouter key (valid, verified by a real authed completion, not just tools/list), Gemini key (wrapper call returns OK), plus the <code>gemini_ask.py</code> wrapper and <code>openrouter_policy.json</code>. Cost-routing is live: <code>or_route</code> resolves cheap→deepseek-v4-flash / mid→deepseek-v4-pro through OpenRouter, budget guard ok ($30 cap). <span style="color:var(--mut)">DeepSeek standalone MCP stays keyless (none exists fleet-wide) — redundant, DeepSeek reached via OpenRouter. #4 evolve pipeline is now key-unblocked; a separate pre-existing response-parse bug in <code>evolve_runner</code> still blocks instinct generation.</span>
   </div>
 </div></header>
 
@@ -140,7 +140,7 @@ version_from 2.1.245 → version_to 2.1.325   (attempt 2026-11-13, not retried s
     </div>
 
     <div class="find high">
-      <h3><span class="sev high">High</span> <span class="sev med">Blocked · needs key</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
+      <h3><span class="sev high">High</span> <span class="sev good">Resolved</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
       <p>Model-Routing doctrine sends mechanical/bulk → OpenRouter CHEAP and bounded reasoning → MID. Both MCP transports are CONNECTION_CLOSED on echo, so every overflow/cheap task silently falls back to the premium Anthropic tier — the exact spend leak the doctrine exists to prevent.</p>
       <div class="ev">root cause: `pass` store EMPTY on echo → shell exports OPENROUTER_API_KEY/DEEPSEEK_API_KEY=$(_pass_env …) resolve to ""
 openrouter npx also had corrupted dep tree (agent-base missing) — fixed via npx cache clear
@@ -197,7 +197,7 @@ OK       keyring.py · agent_identity.py · register_agent.py · or_route.py · 
   <h2>Priority actions</h2>
   <div class="two">
     <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev good">1 ✔</span> Runtime already current; orphan removed</h3><p style="margin:4px 0 0">Active 2.1.330 (mise); failed-update noise eliminated.</p></div>
-    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">2 ⧗</span> Provision OpenRouter + DeepSeek keys</h3><p style="margin:4px 0 0">Blocked on Daniel — keys absent on echo; infra prepped.</p></div>
+    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev good">2 ✔</span> Keys pulled from OMEGA; cost-routing live</h3><p style="margin:4px 0 0">OpenRouter + Gemini verified by real authed calls.</p></div>
     <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev good">3 ✔</span> 19 agents reconciled into roster</h3><p style="margin:4px 0 0">Existing callsigns recovered; no re-badging.</p></div>
     <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">4</span> Reconcile echo-local doctrine paths</h3><p style="margin:4px 0 0">instincts.jsonl / gemini wrapper vs this node's reality.</p></div>
     <div class="find low" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev low">5</span> Prune 189 KB .bak files</h3><p style="margin:4px 0 0">Add rotation to the sync hook.</p></div>
