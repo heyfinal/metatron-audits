@@ -1,0 +1,209 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>METATRON System Audit</title>
+<style>
+  :root{
+    --bg:#0a0c10; --bg2:#0f131a; --card:#141a24; --card2:#1a212d;
+    --line:#232c3a; --ink:#e7edf5; --mut:#8a97aa; --dim:#5f6c7e;
+    --acc:#49b6ff; --acc2:#7c5cff; --ok:#3fcf8e; --warn:#ffb020; --bad:#ff5d6c;
+    --mono:ui-monospace,"SF Mono","JetBrains Mono",Menlo,Consolas,monospace;
+    --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Inter,system-ui,sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:var(--acc);text-decoration:none} a:hover{text-decoration:underline}
+  .wrap{max-width:1100px;margin:0 auto;padding:0 16px}
+  header{position:relative;overflow:hidden;border-bottom:1px solid var(--line);
+    background:radial-gradient(1200px 400px at 10% -10%,rgba(124,92,255,.18),transparent 60%),radial-gradient(900px 500px at 100% 0%,rgba(73,182,255,.14),transparent 55%),var(--bg2)}
+  .hd{padding:46px 0 34px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.32em;color:var(--acc);text-transform:uppercase}
+  h1{font-size:clamp(30px,5vw,46px);margin:.3em 0 .1em;letter-spacing:-.02em;line-height:1.05}
+  h1 b{background:linear-gradient(90deg,var(--acc),var(--acc2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{color:var(--mut);font-size:15px;max-width:70ch}
+  .meta{display:flex;flex-wrap:wrap;gap:10px 20px;margin-top:20px;font-family:var(--mono);font-size:12.5px;color:var(--dim)}
+  .meta b{color:var(--ink);font-weight:600}
+  .grade{display:inline-flex;align-items:center;gap:10px;margin-top:22px;padding:10px 16px;border:1px solid var(--line);border-radius:12px;background:var(--card)}
+  .grade .big{font-size:26px;font-weight:800;letter-spacing:-.01em}
+  .grade .big.g{color:var(--ok)} .grade small{color:var(--mut);font-size:12.5px}
+  section{padding:34px 0;border-bottom:1px solid var(--line)}
+  h2{font-size:12px;letter-spacing:.26em;text-transform:uppercase;color:var(--mut);margin:0 0 18px;font-family:var(--mono)}
+  .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px}
+  .kpi .n{font-size:30px;font-weight:800;letter-spacing:-.02em}
+  .kpi .l{color:var(--mut);font-size:12.5px;margin-top:2px}
+  .kpi .x{font-family:var(--mono);font-size:11px;color:var(--dim);margin-top:6px}
+  .bar{display:flex;height:10px;border-radius:999px;overflow:hidden;margin:4px 0 10px;border:1px solid var(--line)}
+  .bar i{display:block;height:100%}
+  .lg{display:flex;flex-wrap:wrap;gap:14px;font-size:12.5px;color:var(--mut);font-family:var(--mono)}
+  .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:1px}
+  .cards{display:grid;gap:14px}
+  .find{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;position:relative}
+  .find:before{content:"";position:absolute;left:0;top:14px;bottom:14px;width:3px;border-radius:3px;background:var(--dim)}
+  .find.high:before{background:var(--bad)} .find.med:before{background:var(--warn)} .find.low:before{background:var(--acc)} .find.good:before{background:var(--ok)}
+  .find h3{margin:0 0 6px;font-size:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .sev{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:6px;border:1px solid}
+  .sev.high{color:var(--bad);border-color:rgba(255,93,108,.4);background:rgba(255,93,108,.08)}
+  .sev.med{color:var(--warn);border-color:rgba(255,176,32,.4);background:rgba(255,176,32,.08)}
+  .sev.low{color:var(--acc);border-color:rgba(73,182,255,.4);background:rgba(73,182,255,.08)}
+  .sev.good{color:var(--ok);border-color:rgba(63,207,142,.4);background:rgba(63,207,142,.08)}
+  .find p{margin:6px 0;color:var(--mut);font-size:14px}
+  .find .ev{font-family:var(--mono);font-size:12px;color:var(--dim);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;margin-top:8px;white-space:pre-wrap;word-break:break-word}
+  .find .fix{font-size:13.5px;color:var(--ink);margin-top:8px}
+  .find .fix b{color:var(--ok)}
+  table{width:100%;border-collapse:collapse;font-size:13.5px}
+  th,td{text-align:left;padding:9px 10px;border-bottom:1px solid var(--line)}
+  th{color:var(--mut);font-family:var(--mono);font-size:11px;letter-spacing:.1em;text-transform:uppercase;font-weight:600}
+  td.s{font-family:var(--mono);font-size:12px}
+  .pill{font-family:var(--mono);font-size:11px;padding:2px 8px;border-radius:999px;border:1px solid}
+  .pill.ok{color:var(--ok);border-color:rgba(63,207,142,.35)}
+  .pill.warn{color:var(--warn);border-color:rgba(255,176,32,.35)}
+  .pill.bad{color:var(--bad);border-color:rgba(255,93,108,.35)}
+  .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+  @media(max-width:720px){.two{grid-template-columns:1fr}}
+  ul.clean{margin:0;padding-left:18px;color:var(--mut);font-size:14px} ul.clean li{margin:5px 0}
+  footer{padding:30px 0 60px;color:var(--dim);font-size:12.5px;font-family:var(--mono)}
+  .sig{color:var(--mut)} .sig b{color:var(--ink)}
+</style>
+</head>
+<body>
+<header><div class="wrap hd">
+  <div class="eyebrow">Fleet Self-Audit · Node ECHO</div>
+  <h1>METATRON <b>System Audit</b></h1>
+  <p class="sub">Full health &amp; integrity review of the METATRON orchestration install as it runs on node <b>echo</b> (Omarchy / Arch Linux) — the OMNIARCH / REDCLOUD Linux port of Daniel's agent fleet. Inventory, configuration, MCP transport health, doctrine-vs-reality drift, and ranked findings.</p>
+  <div class="meta">
+    <span>DATE&nbsp; <b>2026-11-22</b></span>
+    <span>NODE&nbsp; <b>echo</b></span>
+    <span>OS&nbsp; <b>Omarchy · kernel 7.2.15</b></span>
+    <span>AUDITOR&nbsp; <b>METATRON (self)</b></span>
+    <span>SCOPE&nbsp; <b>~/.claude install</b></span>
+  </div>
+  <div class="grade"><span class="big g">B&nbsp;/&nbsp;Healthy</span><small>Core fleet operational · 2 high-severity items degrade cost-routing &amp; update path</small></div>
+</div></header>
+
+<div class="wrap">
+
+<section>
+  <h2>At a glance</h2>
+  <div class="kpis">
+    <div class="kpi"><div class="n">60</div><div class="l">Agents defined</div><div class="x">68 .md files · 42 in roster.json</div></div>
+    <div class="kpi"><div class="n">71</div><div class="l">Knowledge bases</div><div class="x">19 MB · maestro 356K largest</div></div>
+    <div class="kpi"><div class="n">18</div><div class="l">Hooks wired</div><div class="x">across 5 lifecycle events</div></div>
+    <div class="kpi"><div class="n">53</div><div class="l">Orchestration scripts</div><div class="x">+ 24 local skills</div></div>
+    <div class="kpi"><div class="n">1.6 GB</div><div class="l">~/.claude footprint</div><div class="x">root disk 50% used</div></div>
+    <div class="kpi"><div class="n">2.1.245</div><div class="l">Claude Code ver.</div><div class="x" style="color:var(--bad)">stale — update blocked</div></div>
+  </div>
+</section>
+
+<section>
+  <h2>MCP transport health</h2>
+  <div class="bar">
+    <i style="width:30%;background:var(--ok)"></i>
+    <i style="width:51%;background:var(--warn)"></i>
+    <i style="width:19%;background:var(--bad)"></i>
+  </div>
+  <div class="lg">
+    <span><span class="dot" style="background:var(--ok)"></span>11 connected (core)</span>
+    <span><span class="dot" style="background:var(--warn)"></span>19 awaiting optional auth</span>
+    <span><span class="dot" style="background:var(--bad)"></span>7 failed / misconfigured</span>
+  </div>
+  <table style="margin-top:14px">
+    <thead><tr><th>Server</th><th>State</th><th>Note</th></tr></thead>
+    <tbody>
+      <tr><td class="s">Google Docs/Sheets/Gmail/Calendar/Drive</td><td><span class="pill ok">connected</span></td><td>Workspace suite healthy</td></tr>
+      <tr><td class="s">claude Docs · chrome-devtools · terraform · pdf · TinyFish · openai-docs</td><td><span class="pill ok">connected</span></td><td>Core tooling live</td></tr>
+      <tr><td class="s">openrouter</td><td><span class="pill bad">failed</span></td><td>CONNECTION_CLOSED — breaks cost-overflow routing</td></tr>
+      <tr><td class="s">deepseek</td><td><span class="pill bad">failed</span></td><td>CONNECTION_CLOSED — breaks mid-tier offload</td></tr>
+      <tr><td class="s">desktop-commander</td><td><span class="pill bad">failed</span></td><td>CONNECTION_CLOSED (npx launch)</td></tr>
+      <tr><td class="s">cockroachdb (toolbox / http / cloud)</td><td><span class="pill bad">failed</span></td><td>ENOENT stdio · ECONNREFUSED · HTTP 400 bad cluster_id</td></tr>
+      <tr><td class="s">granola (brand-voice)</td><td><span class="pill warn">degraded</span></td><td>connected but tool list failed to load</td></tr>
+      <tr><td class="s">stripe · supabase · vercel · figma · linear · notion · slack · …(13 more)</td><td><span class="pill warn">needs auth</span></td><td>Optional plugins — expected, not errors</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>Findings — ranked</h2>
+  <div class="cards">
+
+    <div class="find high">
+      <h3><span class="sev high">High</span> Claude Code self-update is failing — runtime is stale</h3>
+      <p>The last auto-update attempt failed and the install is pinned behind the current release. A stale runtime misses harness fixes, security patches, and new tool contracts.</p>
+      <div class="ev">last-update-result.json → outcome: "failed", status: "no_permissions"
+version_from 2.1.245 → version_to 2.1.325   (attempt 2026-11-13, not retried since)</div>
+      <div class="fix"><b>Fix:</b> npm-global dir lacks write perms for the updater. Reinstall under a user-writable prefix (or fix ownership of the global npm path), then re-run the update to 2.1.325+. One-time ownership fix clears the whole class.</div>
+    </div>
+
+    <div class="find high">
+      <h3><span class="sev high">High</span> Cost-routing backends down — OpenRouter + DeepSeek MCP unreachable</h3>
+      <p>Model-Routing doctrine sends mechanical/bulk → OpenRouter CHEAP and bounded reasoning → MID. Both MCP transports are CONNECTION_CLOSED on echo, so every overflow/cheap task silently falls back to the premium Anthropic tier — the exact spend leak the doctrine exists to prevent.</p>
+      <div class="ev">mcp__openrouter → CONNECTION_CLOSED      mcp__deepseek → CONNECTION_CLOSED
+or_route.py present (CLI helper OK) — but the chat_completion transport it feeds is dead</div>
+      <div class="fix"><b>Fix:</b> restart/repair both MCP servers (they ARE configured in ~/.claude.json — this is a transport failure, not missing config). Verify with <code>claude mcp list</code> showing ✔ before trusting cheap-tier routing again.</div>
+    </div>
+
+    <div class="find med">
+      <h3><span class="sev med">Medium</span> Roster drift — roster.json (42) lags live agents (60)</h3>
+      <p>60 agent definitions carry frontmatter identity, but roster.json tracks only 42. Since callsigns must be resolved live from roster.json, the ~18 unregistered agents have no authoritative callsign — handoffs can name the wrong employee or none.</p>
+      <div class="ev">frontmatter-named agents: 60   ·   .md files: 68   ·   roster.json entries: 42</div>
+      <div class="fix"><b>Fix:</b> run register_agent.py over the unregistered .md set so every live agent has a pool callsign + title in roster.json/ROSTER.md.</div>
+    </div>
+
+    <div class="find med">
+      <h3><span class="sev med">Medium</span> Shared-brain drift on echo — instincts.jsonl &amp; gemini wrapper absent</h3>
+      <p>The multi-session sync contract lists <code>learning/instincts.jsonl</code> as a SHARED file, but it does not exist on echo (echo logs to <code>observations.jsonl</code>, 1300 lines). Likewise <code>gemini_ask.py</code> — referenced by CLAUDE.md as the fleet Gemini wrapper — is not ported to this Linux node. Doctrine references tooling this node doesn't have.</p>
+      <div class="ev">MISSING  ~/.claude/learning/instincts.jsonl   (sync contract expects it)
+MISSING  ~/.claude/scripts/gemini_ask.py        (CLAUDE.md "gemini-ask")
+OK       keyring.py · agent_identity.py · register_agent.py · or_route.py · maestro.hlog</div>
+      <div class="fix"><b>Fix:</b> either seed instincts.jsonl / port gemini_ask.py to echo, or amend the echo-local doctrine so the Linux node's real paths (observations.jsonl, Linux Gemini path) are the source of truth. Right now instinct-sync is a silent no-op here.</div>
+    </div>
+
+    <div class="find low">
+      <h3><span class="sev low">Low</span> KB backup clutter — 189 stale .bak snapshots</h3>
+      <p>metatron_sync writes a pre-write backup on every KB edit with no rotation. 189 <code>.bak-pre-metatron-*</code> files now sit in kb/, inflating the directory and muddying greps/searches over the KB tree.</p>
+      <div class="ev">~/.claude/agents/kb/*.bak*  →  189 files   (kb/ total 19 MB)</div>
+      <div class="fix"><b>Fix:</b> add a retention sweep (keep newest N per KB, prune the rest) to the sync hook, or move backups out of kb/ into backups/.</div>
+    </div>
+
+    <div class="find low">
+      <h3><span class="sev low">Low</span> Duplicate / unconfigured MCP placeholders</h3>
+      <p>operations &amp; human-resources plugins register empty <code>google calendar</code> / <code>gmail</code> placeholder servers (state: not configured) that duplicate the already-connected first-party Google suite — pure noise in the server list.</p>
+      <div class="fix"><b>Fix:</b> disable the placeholder entries in those plugins; the native Google MCPs already cover them.</div>
+    </div>
+
+    <div class="find good">
+      <h3><span class="sev good">Strong</span> What's solid</h3>
+      <ul class="clean">
+        <li><b>Hooks fully wired</b> — politeness gate, secret scanner, dangerous-command blocker, prior-art gate, instinct loader, conversation logger, sync + stop hooks across all 5 lifecycle events.</li>
+        <li><b>GitHub auth healthy</b> — logged in as heyfinal with repo/workflow/gist scopes.</li>
+        <li><b>60-agent fleet</b> with KB-backed self-evolution, per-agent keyrings, security dir, and timestamped backups.</li>
+        <li><b>Core MCP green</b> — full Google Workspace suite, Claude Docs, chrome-devtools, terraform, pdf, TinyFish, OpenAI docs all connected.</li>
+        <li><b>Disk healthy</b> — root 50% used; ~/.claude a lean 1.6 GB.</li>
+      </ul>
+    </div>
+
+  </div>
+</section>
+
+<section>
+  <h2>Priority actions</h2>
+  <div class="two">
+    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev high">1</span> Fix npm-global perms → update to 2.1.325+</h3><p style="margin:4px 0 0">Unblocks every future auto-update. One ownership fix.</p></div>
+    <div class="find high" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev high">2</span> Restore OpenRouter + DeepSeek MCP</h3><p style="margin:4px 0 0">Stops silent premium-tier spend on cheap work.</p></div>
+    <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">3</span> Register the 18 orphan agents</h3><p style="margin:4px 0 0">Guarantees correct callsign resolution at dispatch.</p></div>
+    <div class="find med" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev med">4</span> Reconcile echo-local doctrine paths</h3><p style="margin:4px 0 0">instincts.jsonl / gemini wrapper vs this node's reality.</p></div>
+    <div class="find low" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev low">5</span> Prune 189 KB .bak files</h3><p style="margin:4px 0 0">Add rotation to the sync hook.</p></div>
+    <div class="find low" style="padding:14px 16px"><h3 style="font-size:14px"><span class="sev low">6</span> Drop duplicate MCP placeholders</h3><p style="margin:4px 0 0">Clean the server list.</p></div>
+  </div>
+</section>
+
+<footer class="wrap">
+  <div class="sig">Generated by <b>METATRON — Chief Orchestrator (HMFIC)</b> · self-audit of node <b>echo</b> · 2026-11-22</div>
+  <div style="margin-top:6px">No credentials, tokens, or network addresses are included in this report.</div>
+</footer>
+
+</div>
+</body>
+</html>
